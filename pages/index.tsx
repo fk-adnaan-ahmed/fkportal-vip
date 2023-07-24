@@ -1,32 +1,57 @@
-import { ConnectWallet } from "@thirdweb-dev/react";
+import {
+  ChainId,
+  ConnectWallet,
+  useAddress,
+  useContract,
+  useNetworkMismatch,
+  useOwnedNFTs,
+  useSwitchChain
+} from "@thirdweb-dev/react";
 import styles from "../styles/Home.module.css";
-import Image from "next/image";
-import { NextPage } from "next";
+import {NextPage} from "next";
+import PassList from "../components/PassList";
+import {Spacer, useModal} from "@nextui-org/react";
+import VIPContent from "../components/VIPContent";
+import {useEffect} from "react";
+import {showToast} from "../utils/Toast";
+import {ERC1155_ADDRESS} from "../contants";
+import SplashComponent from "../components/SplashComponent";
 
 const Home: NextPage = () => {
+
+
+  const { setVisible, bindings } = useModal();
+  const address = useAddress();
+  const switchChain = useSwitchChain();
+  const isWrongNetwork = useNetworkMismatch()
+
+  useEffect(() => {
+    if (isWrongNetwork && switchChain) {
+      switchChain(ChainId.Mumbai)
+          .then(value => showToast('chain switched'))
+          .catch(reason => showToast('chain switch failed', 'error'))
+    }
+  }, [address, isWrongNetwork, switchChain])
+
+  const {contract} = useContract(ERC1155_ADDRESS);
+  const {data, isLoading} = useOwnedNFTs(contract, address)
+
+  if (!address || !contract || !data || isLoading) return <SplashComponent />
+
+
   return (
     <main className={styles.main}>
       <div className={styles.container}>
         <div className={styles.header}>
           <h1 className={styles.title}>
             Welcome to{" "}
-            <span className={styles.gradientText0}>
-              <a
-                href="https://thirdweb.com/"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                thirdweb.
-              </a>
+            <span className={styles.gradientText4}>
+              <text>
+                FLIPKART GOLD PORTAL
+              </text>
             </span>
           </h1>
-
-          <p className={styles.description}>
-            Get started by configuring your desired network in{" "}
-            <code className={styles.code}>src/index.js</code>, then modify the{" "}
-            <code className={styles.code}>src/App.js</code> file!
-          </p>
-
+          <Spacer y={1}/>
           <div className={styles.connect}>
             <ConnectWallet
               dropdownPosition={{
@@ -36,71 +61,8 @@ const Home: NextPage = () => {
             />
           </div>
         </div>
-
-        <div className={styles.grid}>
-          <a
-            href="https://portal.thirdweb.com/"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              src="/images/portal-preview.png"
-              alt="Placeholder preview of starter"
-              width={300}
-              height={200}
-            />
-            <div className={styles.cardText}>
-              <h2 className={styles.gradientText1}>Portal ➜</h2>
-              <p>
-                Guides, references, and resources that will help you build with
-                thirdweb.
-              </p>
-            </div>
-          </a>
-
-          <a
-            href="https://thirdweb.com/dashboard"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              src="/images/dashboard-preview.png"
-              alt="Placeholder preview of starter"
-              width={300}
-              height={200}
-            />
-            <div className={styles.cardText}>
-              <h2 className={styles.gradientText2}>Dashboard ➜</h2>
-              <p>
-                Deploy, configure, and manage your smart contracts from the
-                dashboard.
-              </p>
-            </div>
-          </a>
-
-          <a
-            href="https://thirdweb.com/templates"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              src="/images/templates-preview.png"
-              alt="Placeholder preview of templates"
-              width={300}
-              height={200}
-            />
-            <div className={styles.cardText}>
-              <h2 className={styles.gradientText3}>Templates ➜</h2>
-              <p>
-                Discover and clone template projects showcasing thirdweb
-                features.
-              </p>
-            </div>
-          </a>
-        </div>
+        <PassList nfts={data} totalCount={4} onCardClick={() => setVisible(true)}/>
+        <VIPContent setVisible={setVisible} bindings={bindings}/>
       </div>
     </main>
   );
